@@ -1,0 +1,12 @@
+app:
+  Name: CurrencyExchangeApp
+  Port:  :3000
+
+database: 
+  Addr: 127.0.0.1:3306
+  User: root
+  Password: 123456
+  Name: currencyexchangeapp
+  MaxIdleConns: 10
+  MaxOpenConns: 100
+  ConnMaxLifetime: 1
