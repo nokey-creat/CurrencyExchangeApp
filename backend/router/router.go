@@ -2,6 +2,7 @@ package router
 
 import (
 	"CurrencyExchangeApp/controllers"
+	"CurrencyExchangeApp/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,15 @@ func SetupRouter() *gin.Engine {
 	{
 		auth.POST("/login", controllers.Login)
 		auth.POST("/register", controllers.Register)
+	}
+
+	api := router.Group("/api")
+
+	api.GET("/exchangeRates", controllers.GetExchangeRates) //Gin 在注册路由时就将当时组上的中间件链拷贝进该路由。authmiddleware在这个路由注册后use，所以该条路由不包含auth中间件
+
+	api.Use(middlewares.AuthMiddleware())
+	{
+		api.POST("/exchangeRates", controllers.CreatExchangeRate) //登录后才能修改
 	}
 
 	return router
