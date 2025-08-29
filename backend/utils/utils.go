@@ -2,6 +2,7 @@
 package utils
 
 import (
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -20,6 +21,9 @@ type MyCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
+// JWT签名密钥
+var mySecret = []byte("secret")
+
 // 生成JWT。接受用户名，返回token
 func GenerateJWT(username string) (string, error) {
 
@@ -30,8 +34,6 @@ func GenerateJWT(username string) (string, error) {
 		},
 	}
 
-	mySecret := []byte("secret")
-
 	//获得未签名的jwt的token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	//签名
@@ -39,6 +41,32 @@ func GenerateJWT(username string) (string, error) {
 
 	return "Bearer " + signedToken, err
 
+}
+
+// 验证并解析jwt，如果jwt有效则返回用户名
+func ParseJWT(tokenString string) (string, error) {
+	//去掉bearer头
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
+
+	//解析并验证jwt
+	//如果签名无效或过期，会返回error，token.valid被设为false
+	token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (any, error) {
+		//限制签名算法
+		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, errors.New("unexpected Signing Method")
+		}
+		return mySecret, nil
+	})
+	if err != nil {
+		return "", err
+	} else if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
+		//验证成功
+		return claims.Username, nil
+	} else {
+		return "", errors.New("unknown claims type, cannot proceed")
+	}
 }
 
 // 比对加密后的密码,密码正确返回true
