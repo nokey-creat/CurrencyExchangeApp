@@ -3,10 +3,12 @@ package controllers
 import (
 	"CurrencyExchangeApp/global"
 	"CurrencyExchangeApp/models"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // 新增货币汇率记录
@@ -49,7 +51,11 @@ func GetExchangeRates(ctx *gin.Context) {
 
 	//传入切片批量查询，这里返回表的全部结果
 	if err := global.Db.Find(&exchangeRates).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 

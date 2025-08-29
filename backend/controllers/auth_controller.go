@@ -4,9 +4,11 @@ import (
 	"CurrencyExchangeApp/global"
 	"CurrencyExchangeApp/models"
 	"CurrencyExchangeApp/utils"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // 用户注册的处理器
@@ -76,9 +78,14 @@ func Login(ctx *gin.Context) {
 
 	//现在数据库中查找名字，并获取对应的密码
 	resDb := global.Db.Where("username = ?", input.Username).First(&user)
-	//名字不存在的情况
+
 	if resDb.Error != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "wrong username"})
+		//名字不存在的情况
+		if errors.Is(resDb.Error, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "can not found username"})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": resDb.Error.Error()})
+		}
 		return
 	}
 
