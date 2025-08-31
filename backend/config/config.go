@@ -51,4 +51,5 @@ func InitConfig() {
 
 	//根据配置初始化数据库连接
 	initDB()
+	initRedis()
 }
