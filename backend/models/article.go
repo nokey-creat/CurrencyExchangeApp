@@ -8,5 +8,6 @@ type Article struct {
 	Title   string `binding:"required" json:"Title"`
 	Content string `binding:"required" json:"Content"`
 	Preview string `binding:"required" json:"Preview"`
-	Likes   int    `gorm:"default:0" json:"Likes"`
+	//Likes   int    `gorm:"default:0" json:"Likes"`
+	//Author string `json:"-"`
 }
