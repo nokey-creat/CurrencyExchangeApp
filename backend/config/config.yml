@@ -10,3 +10,6 @@ database:
   MaxIdleConns: 10
   MaxOpenConns: 100
   ConnMaxLifetime: 1
+
+CoreConfig:
+  AllowOrigins: http://localhost:5173
