@@ -1,8 +1,12 @@
 // 放一些全局变量,方便项目其他地方访问
 package global
 
-import "gorm.io/gorm"
+import (
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
+)
 
 var (
-	Db *gorm.DB
+	Db      *gorm.DB
+	RedisDB *redis.Client
 )
