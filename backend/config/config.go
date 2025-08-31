@@ -27,6 +27,10 @@ type Config struct {
 		//连接可复用的最大时间(小时)
 		ConnMaxLifetime int
 	}
+	CoreConfig struct {
+		//Core允许的来源
+		AllowOrigins string
+	}
 }
 
 // 储存配置信息的结构体指针
