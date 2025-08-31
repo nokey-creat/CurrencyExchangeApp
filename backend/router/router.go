@@ -3,6 +3,7 @@ package router
 import (
 	"CurrencyExchangeApp/controllers"
 	"CurrencyExchangeApp/middlewares"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,7 +27,23 @@ func SetupRouter() *gin.Engine {
 	api.Use(middlewares.AuthMiddleware())
 	{
 		api.POST("/exchangeRates", controllers.CreatExchangeRate) //登录后才能修改
+
+		api.POST("/articles", controllers.CreateArticle)
+		api.GET("/articles", controllers.GetArticles)
+		api.GET("/articles/:id", controllers.GetArticleById)
+
+		api.POST("/articles/:id/likes", controllers.LikeArticle)
+		api.GET("/articles/:id/likes", controllers.GetArticleLikesById)
+
 	}
+
+	// 自定义 404 处理
+	router.NoRoute(func(ctx *gin.Context) {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error":  "API endpoint not found",
+			"status": 404,
+		})
+	})
 
 	return router
 }
