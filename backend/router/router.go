@@ -1,10 +1,13 @@
 package router
 
 import (
+	"CurrencyExchangeApp/config"
 	"CurrencyExchangeApp/controllers"
 	"CurrencyExchangeApp/middlewares"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,6 +16,16 @@ import (
 func SetupRouter() *gin.Engine {
 
 	router := gin.Default() //返回带两个默认中间件的 *gin.Engine
+
+	//在根路由添加core中间件，处理跨域请求
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{config.AppConfig.CoreConfig.AllowOrigins},  //允许的来源，这里是前端服务器addr
+		AllowMethods:     []string{"GET", "POST"},                             //允许的方法
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"}, //除了简单请求头外，允许的头部
+		ExposeHeaders:    []string{"Content-Length"},                          //允许js获取的响应头部（不需要Authorization，这是请求头中的）
+		AllowCredentials: true,                                                // 允许携带凭证，不直接影响 JWT 发送
+		MaxAge:           12 * time.Hour,                                      //本次预检请求的有效期
+	}))
 
 	auth := router.Group("/api/auth")
 	{
