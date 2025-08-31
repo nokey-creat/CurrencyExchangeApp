@@ -7,7 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 权限验证的中间件
+// 验证用户登录状态的中间件
+// 已登录用户进入下一个处理器，且username被保存到上下文中
 func AuthMiddleware() gin.HandlerFunc {
 	//Gin 框架通过 gin.Context 结构体在中间件和处理函数之间传递请求信息
 	return func(ctx *gin.Context) {
@@ -29,7 +30,8 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		//传递username
+		//用户已登录
+		//将用户名存入上下文
 		ctx.Set("username", username)
 		ctx.Next()
 	}
