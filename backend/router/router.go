@@ -35,14 +35,14 @@ func SetupRouter() *gin.Engine {
 
 	api := router.Group("/api")
 
-	api.GET("/exchangeRates", controllers.GetExchangeRates) //Gin 在注册路由时就将当时组上的中间件链拷贝进该路由。authmiddleware在这个路由注册后use，所以该条路由不包含auth中间件
+	//api.GET("/exchangeRates", controllers.GetExchangeRates) //Gin 在注册路由时就将当时组上的中间件链拷贝进该路由。authmiddleware在这个路由注册后use，所以该条路由不包含auth中间件
 
 	api.Use(middlewares.AuthMiddleware())
 	{
-		api.POST("/exchangeRates", controllers.CreatExchangeRate) //登录后才能修改
+		//api.POST("/exchangeRates", controllers.CreatExchangeRate) //登录后才能修改
 
 		api.POST("/articles", controllers.CreateArticle)
-		api.GET("/articles", controllers.GetArticles)
+		api.GET("/articles", controllers.GetArticlesPreview)
 		api.GET("/articles/:id", controllers.GetArticleById)
 
 		api.POST("/articles/:id/likes", controllers.LikeArticle)
