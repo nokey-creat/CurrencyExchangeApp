@@ -3,8 +3,10 @@ package controllers
 import (
 	"CurrencyExchangeApp/global"
 	"CurrencyExchangeApp/models"
+	"CurrencyExchangeApp/utils"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -16,7 +18,7 @@ import (
 var cacheKey = "articles"
 
 // 新增文章
-// 解决缓存失效问题：更新后删去缓存
+// 解决缓存失效问题：更新后删去articles的缓存
 func CreateArticle(ctx *gin.Context) {
 
 	var article models.Article
@@ -25,6 +27,14 @@ func CreateArticle(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	//给文章添加作者
+	username, ok := utils.GetUsername(ctx)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get username"})
+		return
+	}
+	article.Author = username
 
 	if err := global.Db.AutoMigrate(&article); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -47,8 +57,8 @@ func CreateArticle(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, article)
 }
 
-// 获取全部文章数据
-func GetArticles(ctx *gin.Context) {
+// 获取全部文章的预览
+func GetArticlesPreview(ctx *gin.Context) {
 
 	//读取时采用旁路缓存
 	//先尝试从缓存数据库中读取
@@ -59,7 +69,7 @@ func GetArticles(ctx *gin.Context) {
 
 		//从sql数据库中读取
 		var articles []models.Article
-		if err := global.Db.Find(&articles).Error; err != nil {
+		if err := global.Db.Omit("content").Find(&articles).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			} else {
@@ -121,17 +131,51 @@ func GetArticleById(ctx *gin.Context) {
 	id := articleURI.ID
 
 	//下面是查询id对应文章
-	var article models.Article
 
-	if err := global.Db.Where("id = ?", id).First(&article).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	articleCacheKey := fmt.Sprintf("article:%s", id)
+
+	cache, err := global.RedisDB.Get(ctx.Request.Context(), articleCacheKey).Result()
+
+	if err == redis.Nil {
+
+		var article models.Article
+		if err := global.Db.Where("id = ?", id).First(&article).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error:": err.Error()})
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			}
+			return
 		}
-		return
-	}
 
-	ctx.JSON(http.StatusOK, article)
+		jsonArticle, err := json.Marshal(article)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if err := global.RedisDB.Set(ctx.Request.Context(), articleCacheKey, jsonArticle, 1*time.Hour).Err(); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, article)
+
+	} else if err != nil {
+
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+
+	} else {
+
+		var article models.Article
+
+		if err := json.Unmarshal([]byte(cache), &article); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, article)
+	}
 
 }
